@@ -10,7 +10,8 @@ public class Cell : MonoBehaviour , IPointerClickHandler
     public TextMeshProUGUI numberText;
 
     public int number;
-    
+
+    public Vector2 cellIndex;
     public void OnPointerClick(PointerEventData eventData)
     {
         number++;

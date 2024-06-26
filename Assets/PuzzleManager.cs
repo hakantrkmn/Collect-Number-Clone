@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class PuzzleManager : MonoBehaviour
 {
@@ -29,6 +31,7 @@ public class PuzzleManager : MonoBehaviour
             for (int j = 0; j < gridCreator.width; j++)
             {
                 matrix[i, j] = gridCreator.cells[i * gridCreator.width + j];
+                gridCreator.cells[i * gridCreator.width + j].cellIndex = new Vector2(i, j);
             }
         }
         GenerateMatrix();
@@ -45,6 +48,40 @@ public class PuzzleManager : MonoBehaviour
         
         UpdateCellNumbers();
        
+    }
+
+    void DropElementsAndFill()
+    {
+        var changedCells = new List<Cell>();
+        // Her sütun için işlem yap
+        for (int col = 0; col < gridCreator.width; col++)
+        {
+            int writeIndex = 0; // En üst satırdan başla
+
+            // Yukarıdan aşağıya doğru ilerle
+            for (int row = 0; row < gridCreator.height; row++)
+            {
+                if (matrix[row, col].number != 0)
+                {
+                    // Sıfır olmayan elemanı yukarı taşı
+                    matrix[writeIndex, col].number = matrix[row, col].number;
+                    writeIndex++;
+                }
+            }
+
+            // Kalan boş hücreleri -1 ile doldur
+            while (writeIndex < gridCreator.height)
+            {
+                matrix[writeIndex, col].number = Random.Range(1,5);
+                changedCells.Add(matrix[writeIndex, col]);
+                writeIndex++;
+            }
+        }
+
+        foreach (var cell in changedCells)
+        {
+            UpdateMatrixAfterChange((int)cell.cellIndex.x, (int)cell.cellIndex.y);
+        }
     }
 
     public void UpdateCellNumbers()
@@ -81,8 +118,9 @@ public class PuzzleManager : MonoBehaviour
                 }
             }
         }
-        
-        UpdateCellNumbers();
+        //DropElementsAndFill();
+
+       // UpdateCellNumbers();
     }
 
     void UpdateMatrixAfterChange(int row, int col)
@@ -124,11 +162,24 @@ public class PuzzleManager : MonoBehaviour
             indexesToClear.AddRange(verticalIndexes);
         }
 
+        if (indexesToClear.Count!=0)
+        {
+            Debug.Log("oldu");
+
+        }
         // Set the collected indexes to 0
         foreach (var index in indexesToClear)
         {
-            matrix[index.Item1, index.Item2].number = 0;
+            DOVirtual.Int(matrix[index.Item1, index.Item2].number, 0, 0.5f, x =>
+            {
+                matrix[index.Item1, index.Item2].number = x;
+                matrix[index.Item1, index.Item2].numberText.text = x.ToString();
+            }).OnComplete(() =>
+            {
+                matrix[index.Item1, index.Item2].number = 0;
+            });
         }
+
     }
 
 
