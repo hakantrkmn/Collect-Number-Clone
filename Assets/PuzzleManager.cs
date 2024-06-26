@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -65,6 +66,7 @@ public class PuzzleManager : MonoBehaviour
                 {
                     // Sıfır olmayan elemanı yukarı taşı
                     matrix[writeIndex, col].number = matrix[row, col].number;
+                    matrix[writeIndex, col].numberText.text = matrix[row, col].number.ToString();
                     writeIndex++;
                 }
             }
@@ -73,6 +75,7 @@ public class PuzzleManager : MonoBehaviour
             while (writeIndex < gridCreator.height)
             {
                 matrix[writeIndex, col].number = Random.Range(1,5);
+                matrix[writeIndex, col].numberText.text = matrix[writeIndex, col].number.ToString();
                 changedCells.Add(matrix[writeIndex, col]);
                 writeIndex++;
             }
@@ -82,6 +85,7 @@ public class PuzzleManager : MonoBehaviour
         {
             UpdateMatrixAfterChange((int)cell.cellIndex.x, (int)cell.cellIndex.y);
         }
+        
     }
 
     public void UpdateCellNumbers()
@@ -170,13 +174,19 @@ public class PuzzleManager : MonoBehaviour
         // Set the collected indexes to 0
         foreach (var index in indexesToClear)
         {
-            DOVirtual.Int(matrix[index.Item1, index.Item2].number, 0, 0.5f, x =>
+            DOVirtual.Int(matrix[index.Item1, index.Item2].number, 0, 2, x =>
             {
                 matrix[index.Item1, index.Item2].number = x;
                 matrix[index.Item1, index.Item2].numberText.text = x.ToString();
             }).OnComplete(() =>
             {
                 matrix[index.Item1, index.Item2].number = 0;
+    
+                if (index == indexesToClear.Last())
+                {
+                    Debug.Log("hakan");
+                    DropElementsAndFill();
+                }
             });
         }
 
