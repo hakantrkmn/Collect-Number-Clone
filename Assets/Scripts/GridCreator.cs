@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -10,7 +12,7 @@ public class GridCreator : MonoBehaviour
     public int width;
     public int height;
     public float spacing;
-    public List<GameObject> cells;
+    public List<Cell> cells;
 
     [Button]
     public void CreateGrid()
@@ -33,20 +35,23 @@ public class GridCreator : MonoBehaviour
                 Vector3 gridPosition = new Vector3(startX + x * (cellSize + spacing),
                     startY + y * (cellSize + spacing), 0);
 
-                var grid = Instantiate(cellPrefab, gridPosition, Quaternion.identity, transform);
+                var grid =  PrefabUtility.InstantiatePrefab(cellPrefab).GameObject();
+                grid.transform.SetParent(transform);
                 grid.transform.localPosition = gridPosition;
                 grid.GetComponent<RectTransform>().sizeDelta = new Vector2(cellSize, cellSize);
 
-                cells.Add(grid);
+                cells.Add(grid.GetComponent<Cell>());
             }
         }
     }
+    
+    
 
     private void ClearGrid()
     {
-        foreach (GameObject grid in cells)
+        foreach (var grid in cells)
         {
-            DestroyImmediate(grid);
+            DestroyImmediate(grid.gameObject);
         }
         
         cells.Clear();
