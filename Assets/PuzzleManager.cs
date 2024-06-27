@@ -1,19 +1,16 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
 using DG.Tweening;
 using Sirenix.OdinInspector;
-using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class PuzzleManager : MonoBehaviour
 {
     GridCreator gridCreator;
-
     private Cell[,] matrix;
-
-    private Sequence tween;
+    private List<Cell> nonZeroNumbers = new List<Cell>();
+    private List<Cell> ZeroNumbers = new List<Cell>();
 
     private void Start()
     {
@@ -36,101 +33,144 @@ public class PuzzleManager : MonoBehaviour
             }
         }
 
-
         GenerateMatrix();
     }
 
-    public List<Cell> nonZeroNumbers = new List<Cell>();
-    public List<Cell> ZeroNumbers = new List<Cell>();
+  private IEnumerator DropElementsAndFillCoroutine()
+{
+    var changedCells = new List<Cell>();
+    Sequence mainSequence = DOTween.Sequence();
 
-    void DropElementsAndFill()
+    for (int col = 0; col < gridCreator.width; col++)
     {
-        tween = DOTween.Sequence();
-
-        UnityEngine.Debug.Log(tween.IsActive());
-        var changedCells = new List<Cell>();
-        // Her sütun için işlem yap
-        for (int col = 0; col < gridCreator.width; col++)
+        bool hasZero = false;
+        for (int row = 0; row < gridCreator.height; row++)
         {
-            bool hasZero = false;
-            for (int row = 0; row < gridCreator.height; row++)
+            if (matrix[row, col].number == 0)
             {
-                if (matrix[row, col].number == 0)
-                {
-                    hasZero = true;
-                    break;
-                }
+                hasZero = true;
+                break;
             }
+        }
 
-            // Eğer sütunda sıfır yoksa, bu sütunu atla
-            if (!hasZero) continue;
-            
-            UnityEngine.Debug.Log("sıfır var");
+        if (!hasZero) continue;
 
+        Debug.Log("sıfır var");
 
-            nonZeroNumbers.Clear();
-            ZeroNumbers.Clear();
+        nonZeroNumbers.Clear();
+        ZeroNumbers.Clear();
 
-
-            for (int row = gridCreator.height - 1; row >= 0; row--)
+        for (int row = gridCreator.height - 1; row >= 0; row--)
+        {
+            if (matrix[row, col].number != 0)
             {
-                if (matrix[row, col].number != 0)
-                {
-                    nonZeroNumbers.Add(matrix[row, col]);
-                }
-                else
-                {
-                    ZeroNumbers.Add(matrix[row, col]);
-                }
+                nonZeroNumbers.Add(matrix[row, col]);
             }
-
-            List<Vector3> gridPositions = new List<Vector3>();
-
-            for (int row = gridCreator.height - 1; row >= 0; row--)
+            else
             {
-                gridPositions.Add(matrix[row, col].transform.position);
+                ZeroNumbers.Add(matrix[row, col]);
             }
+        }
 
+        List<Vector3> gridPositions = new List<Vector3>();
 
-            for (int i = 0; i < ZeroNumbers.Count; i++)
-            {
-                ZeroNumbers[i].transform.position += new Vector3(0, 800, 0);
+        for (int row = gridCreator.height - 1; row >= 0; row--)
+        {
+            gridPositions.Add(matrix[row, col].transform.position);
+        }
+
+        for (int i = 0; i < ZeroNumbers.Count; i++)
+        {
+            ZeroNumbers[i].transform.position = new Vector3(ZeroNumbers[i].transform.position.x, gridCreator.topPoint.position.y + (i*gridCreator.cellGap), ZeroNumbers[i].transform.position.z);
                 ZeroNumbers[i].number = Random.Range(1, 5);
-                ZeroNumbers[i].UpdateText();
-            }
-
-            nonZeroNumbers.AddRange(ZeroNumbers);
-            changedCells.AddRange(nonZeroNumbers);
-
-            for (int i = 0; i < nonZeroNumbers.Count; i++)
-            {
-                if (nonZeroNumbers[i].transform.position != gridPositions[i])
-                {
-                    tween.Join(nonZeroNumbers[i].transform.DOMove(gridPositions[i],
-                        Vector3.Distance(gridPositions[i], nonZeroNumbers[i].transform.position) / 400));
-                }
-                
-            }
-
-            for (int j = 0; j < nonZeroNumbers.Count; j++)
-            {
-                matrix[j, col] = nonZeroNumbers[nonZeroNumbers.Count - 1 - j];
-                matrix[j, col].cellIndex = new Vector2(col, j);
-            }
+            ZeroNumbers[i].UpdateText();
         }
 
+        nonZeroNumbers.AddRange(ZeroNumbers);
+        changedCells.AddRange(nonZeroNumbers);
 
-        foreach (var cell in changedCells)
+        Sequence columnSequence = DOTween.Sequence();
+
+        for (int i = 0; i < nonZeroNumbers.Count; i++)
         {
-            tween.AppendCallback(()=>
+            if (nonZeroNumbers[i].transform.position != gridPositions[i])
             {
-                UpdateMatrixAfterChange((int)cell.cellIndex.y, (int)cell.cellIndex.x);
-            });
+                columnSequence.Join(nonZeroNumbers[i].transform.DOMove(gridPositions[i],
+                    Vector3.Distance(gridPositions[i], nonZeroNumbers[i].transform.position) / 800));
+            }
         }
-        changedCells.Clear();
 
+        mainSequence.Join(columnSequence);
+
+        for (int j = 0; j < nonZeroNumbers.Count; j++)
+        {
+            matrix[j, col] = nonZeroNumbers[nonZeroNumbers.Count - 1 - j];
+            matrix[j, col].cellIndex = new Vector2(col, j);
+        }
     }
 
+    yield return mainSequence.WaitForCompletion();
+
+    foreach (var cell in changedCells)
+    {
+        yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine((int)cell.cellIndex.y, (int)cell.cellIndex.x));
+    }
+    changedCells.Clear();
+}
+
+    private IEnumerator UpdateMatrixAfterChangeCoroutine(int row, int col)
+    {
+        int value = matrix[row, col].number;
+        List<(int, int)> indexesToClear = new List<(int, int)>();
+
+        // Check horizontal
+        List<(int, int)> horizontalIndexes = new List<(int, int)>();
+        for (int k = col - 1; k >= 0 && matrix[row, k].number == value; k--)
+        {
+            horizontalIndexes.Add((row, k));
+        }
+        for (int k = col + 1; k < gridCreator.width && matrix[row, k].number == value; k++)
+        {
+            horizontalIndexes.Add((row, k));
+        }
+        if (horizontalIndexes.Count >= 2)
+        {
+            horizontalIndexes.Add((row, col));
+            indexesToClear.AddRange(horizontalIndexes);
+        }
+
+        // Check vertical
+        List<(int, int)> verticalIndexes = new List<(int, int)>();
+        for (int k = row - 1; k >= 0 && matrix[k, col].number == value; k--)
+        {
+            verticalIndexes.Add((k, col));
+        }
+        for (int k = row + 1; k < gridCreator.height && matrix[k, col].number == value; k++)
+        {
+            verticalIndexes.Add((k, col));
+        }
+        if (verticalIndexes.Count >= 2)
+        {
+            verticalIndexes.Add((row, col));
+            indexesToClear.AddRange(verticalIndexes);
+        }
+
+        Sequence sequence = DOTween.Sequence();
+
+        foreach (var index in indexesToClear)
+        {
+            matrix[index.Item1, index.Item2].number = 0;
+            matrix[index.Item1, index.Item2].UpdateText();
+            sequence.Join(matrix[index.Item1, index.Item2].Animation());
+        }
+
+        yield return sequence.WaitForCompletion();
+
+        if (indexesToClear.Count > 0)
+        {
+            yield return StartCoroutine(DropElementsAndFillCoroutine());
+        }
+    }
 
     private void OnEnable()
     {
@@ -144,68 +184,8 @@ public class PuzzleManager : MonoBehaviour
 
     private void OnCellClicked(Cell obj)
     {
-        UpdateMatrixAfterChange((int)obj.cellIndex.y, (int)obj.cellIndex.x);
+        StartCoroutine(UpdateMatrixAfterChangeCoroutine((int)obj.cellIndex.y, (int)obj.cellIndex.x));
     }
-
-    void UpdateMatrixAfterChange(int row, int col)
-    {
-        tween = DOTween.Sequence();
-
-        int value = matrix[row, col].number;
-
-        // List to keep track of indexes to be set to 0
-        List<(int, int)> indexesToClear = new List<(int, int)>();
-
-        // Check horizontal
-        List<(int, int)> horizontalIndexes = new List<(int, int)>();
-
-        for (int k = col - 1; k >= 0 && matrix[row, k].number == value; k--)
-        {
-            horizontalIndexes.Add((row, k));
-        }
-
-        for (int k = col + 1; k < gridCreator.width && matrix[row, k].number == value; k++)
-        {
-            horizontalIndexes.Add((row, k));
-        }
-
-        if (horizontalIndexes.Count >= 2)
-        {
-            horizontalIndexes.Add((row, col)); // Include the changed cell itself
-            indexesToClear.AddRange(horizontalIndexes);
-        }
-
-        // Check vertical
-        List<(int, int)> verticalIndexes = new List<(int, int)>();
-        for (int k = row - 1; k >= 0 && matrix[k, col].number == value; k--)
-        {
-            verticalIndexes.Add((k, col));
-        }
-
-        for (int k = row + 1; k < gridCreator.height && matrix[k, col].number == value; k++)
-        {
-            verticalIndexes.Add((k, col));
-        }
-
-        if (verticalIndexes.Count >= 2)
-        {
-            verticalIndexes.Add((row, col)); // Include the changed cell itself
-            indexesToClear.AddRange(verticalIndexes);
-        }
-
-
-        // Set the collected indexes to 0
-        foreach (var index in indexesToClear)
-        {
-            matrix[index.Item1, index.Item2].number = 0;
-            matrix[index.Item1, index.Item2].UpdateText();
-            tween.Join(matrix[index.Item1, index.Item2].Animation());
-        }
-
-        //tween.AppendInterval(1);
-        tween.AppendCallback(DropElementsAndFill);
-    }
-
 
     void GenerateMatrix()
     {
@@ -234,7 +214,6 @@ public class PuzzleManager : MonoBehaviour
                     }
                 }
 
-                // If no valid value is found (which shouldn't happen with the given constraints), fill with a default value
                 if (!validValueFound)
                 {
                     matrix[i, j].number = 1;
@@ -252,12 +231,10 @@ public class PuzzleManager : MonoBehaviour
         {
             horizontalCount++;
         }
-
-        for (int k = col + 1; k < gridCreator.height && matrix[row, k].number == value; k++)
+        for (int k = col + 1; k < gridCreator.width && matrix[row, k].number == value; k++)
         {
             horizontalCount++;
         }
-
         if (horizontalCount >= 3) return false;
 
         // Check vertical
@@ -266,12 +243,10 @@ public class PuzzleManager : MonoBehaviour
         {
             verticalCount++;
         }
-
-        for (int k = row + 1; k < gridCreator.width && matrix[k, col].number == value; k++)
+        for (int k = row + 1; k < gridCreator.height && matrix[k, col].number == value; k++)
         {
             verticalCount++;
         }
-
         if (verticalCount >= 3) return false;
 
         return true;
@@ -286,7 +261,6 @@ public class PuzzleManager : MonoBehaviour
             {
                 rowString += matrix[i, j] + " ";
             }
-
             Debug.Log(rowString);
         }
     }

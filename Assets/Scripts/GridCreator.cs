@@ -14,6 +14,8 @@ public class GridCreator : MonoBehaviour
     public float spacing;
     public List<Cell> cells;
 
+    public Transform topPoint;
+    public float cellGap;
     [Button]
     public void CreateGrid()
     {
@@ -27,7 +29,8 @@ public class GridCreator : MonoBehaviour
         var totalHeight = (cellSize + spacing) * height - spacing;
         var startX = -totalWidth / 2 + cellSize / 2;
         var startY = totalHeight / 2 - cellSize / 2;
-
+        
+        topPoint.position += new Vector3(0, cellSize/2, 0);
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -43,6 +46,8 @@ public class GridCreator : MonoBehaviour
                 cells.Add(grid.GetComponent<Cell>());
             }
         }
+        
+        cellGap = cells[0].transform.position.y- cells[width].transform.position.y;
     }
     
     
