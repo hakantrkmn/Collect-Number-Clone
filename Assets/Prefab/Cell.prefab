@@ -51,6 +51,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numberText: {fileID: 3937528835714044745}
+  number: 0
+  background: {fileID: 5660414128744386840}
+  cellIndex: {x: 0, y: 0}
 --- !u!1 &6150422678729266157
 GameObject:
   m_ObjectHideFlags: 0

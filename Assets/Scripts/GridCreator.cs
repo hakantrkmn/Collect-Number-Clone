@@ -26,14 +26,14 @@ public class GridCreator : MonoBehaviour
         var totalWidth = (cellSize + spacing) * width - spacing;
         var totalHeight = (cellSize + spacing) * height - spacing;
         var startX = -totalWidth / 2 + cellSize / 2;
-        var startY = -totalHeight / 2 + cellSize / 2;
+        var startY = totalHeight / 2 - cellSize / 2;
 
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
                 Vector3 gridPosition = new Vector3(startX + x * (cellSize + spacing),
-                    startY + y * (cellSize + spacing), 0);
+                    startY + y * -(cellSize + spacing), 0);
 
                 var grid =  PrefabUtility.InstantiatePrefab(cellPrefab).GameObject();
                 grid.transform.SetParent(transform);
