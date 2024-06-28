@@ -30,19 +30,7 @@ public class PuzzleManager : MonoBehaviour
         //tüm satırları kontrol et
         for (int col = 0; col < width; col++)
         {
-            /*
-            bool hasZero = false;
-            for (int row = 0; row < height; row++)
-            {
-                if (matrix[row, col].number == 0)
-                {
-                    hasZero = true;
-                    break;
-                }
-            }
-            //sıfır yoksa devam et
-            if (!hasZero) continue;
-            */
+           
             nonZeroNumbers.Clear();
             ZeroNumbers.Clear();
 
@@ -106,27 +94,13 @@ public class PuzzleManager : MonoBehaviour
         //değişen celler için kontrol yap
         foreach (var cell in changedCells)
         {
-            yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine((int)cell.cellIndex.y, (int)cell.cellIndex.x));
+            yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine());
         }
-        //yield return StartCoroutine(CheckAllCells());
 
         changedCells.Clear();
     }
-
-    private IEnumerator CheckAllCells()
-    {
-        var width = gridCreator.puzzleSettings.width;
-        var height = gridCreator.puzzleSettings.height;
-
-        for (int i = 0; i < height; i++)
-        {
-            for (int j = 0; j < width; j++)
-            {
-                yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine(i, j));
-            }
-        }
-    }
-   private IEnumerator UpdateMatrixAfterChangeCoroutine(int row, int col)
+    
+   private IEnumerator UpdateMatrixAfterChangeCoroutine(bool isClick = false,int row = 0, int col = 0)
 {
     var width = gridCreator.puzzleSettings.width;
     var height = gridCreator.puzzleSettings.height;
@@ -134,50 +108,23 @@ public class PuzzleManager : MonoBehaviour
 
     List<(int, int)> indexesToClear = new List<(int, int)>();
 
-    // Check all cells for matches
-    for (int i = 0; i < height; i++)
+    if (isClick)
     {
-        for (int j = 0; j < width; j++)
+        CheckForBlast(row, col, width, indexesToClear, height);
+
+    }
+    else
+    {
+        for (int i = 0; i < height; i++)
         {
-            int value = matrix[i, j].number;
-
-            // Check horizontal
-            List<(int, int)> horizontalIndexes = new List<(int, int)>();
-            for (int k = j - 1; k >= 0 && matrix[i, k].number == value; k--)
+            for (int j = 0; j < width; j++)
             {
-                horizontalIndexes.Add((i, k));
-            }
-
-            for (int k = j + 1; k < width && matrix[i, k].number == value; k++)
-            {
-                horizontalIndexes.Add((i, k));
-            }
-
-            if (horizontalIndexes.Count >= 2)
-            {
-                horizontalIndexes.Add((i, j));
-                indexesToClear.AddRange(horizontalIndexes);
-            }
-
-            // Check vertical
-            List<(int, int)> verticalIndexes = new List<(int, int)>();
-            for (int k = i - 1; k >= 0 && matrix[k, j].number == value; k--)
-            {
-                verticalIndexes.Add((k, j));
-            }
-
-            for (int k = i + 1; k < height && matrix[k, j].number == value; k++)
-            {
-                verticalIndexes.Add((k, j));
-            }
-
-            if (verticalIndexes.Count >= 2)
-            {
-                verticalIndexes.Add((i, j));
-                indexesToClear.AddRange(verticalIndexes);
+                CheckForBlast(i, j, width, indexesToClear, height);
             }
         }
     }
+    // Check all cells for matches
+    
 
     Sequence sequence = DOTween.Sequence();
 
@@ -203,7 +150,48 @@ public class PuzzleManager : MonoBehaviour
     }
 }
 
-    private void OnEnable()
+private void CheckForBlast(int i, int j, int width, List<(int, int)> indexesToClear, int height)
+{
+    int value = matrix[i, j].number;
+
+    // Check horizontal
+    List<(int, int)> horizontalIndexes = new List<(int, int)>();
+    for (int k = j - 1; k >= 0 && matrix[i, k].number == value; k--)
+    {
+        horizontalIndexes.Add((i, k));
+    }
+
+    for (int k = j + 1; k < width && matrix[i, k].number == value; k++)
+    {
+        horizontalIndexes.Add((i, k));
+    }
+
+    if (horizontalIndexes.Count >= 2)
+    {
+        horizontalIndexes.Add((i, j));
+        indexesToClear.AddRange(horizontalIndexes);
+    }
+
+    // Check vertical
+    List<(int, int)> verticalIndexes = new List<(int, int)>();
+    for (int k = i - 1; k >= 0 && matrix[k, j].number == value; k--)
+    {
+        verticalIndexes.Add((k, j));
+    }
+
+    for (int k = i + 1; k < height && matrix[k, j].number == value; k++)
+    {
+        verticalIndexes.Add((k, j));
+    }
+
+    if (verticalIndexes.Count >= 2)
+    {
+        verticalIndexes.Add((i, j));
+        indexesToClear.AddRange(verticalIndexes);
+    }
+}
+
+private void OnEnable()
     {
         EventManager.CellClicked += OnCellClicked;
     }
@@ -217,6 +205,6 @@ public class PuzzleManager : MonoBehaviour
     {
         matrix = gridCreator.matrix;
 
-        StartCoroutine(UpdateMatrixAfterChangeCoroutine((int)obj.cellIndex.y, (int)obj.cellIndex.x));
+        StartCoroutine(UpdateMatrixAfterChangeCoroutine(true,(int)obj.cellIndex.y, (int)obj.cellIndex.x));
     }
 }
