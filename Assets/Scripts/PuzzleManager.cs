@@ -30,6 +30,7 @@ public class PuzzleManager : MonoBehaviour
         //tüm satırları kontrol et
         for (int col = 0; col < width; col++)
         {
+            /*
             bool hasZero = false;
             for (int row = 0; row < height; row++)
             {
@@ -41,7 +42,7 @@ public class PuzzleManager : MonoBehaviour
             }
             //sıfır yoksa devam et
             if (!hasZero) continue;
-            
+            */
             nonZeroNumbers.Clear();
             ZeroNumbers.Clear();
 
@@ -107,78 +108,100 @@ public class PuzzleManager : MonoBehaviour
         {
             yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine((int)cell.cellIndex.y, (int)cell.cellIndex.x));
         }
+        //yield return StartCoroutine(CheckAllCells());
 
         changedCells.Clear();
     }
 
-    private IEnumerator UpdateMatrixAfterChangeCoroutine(int row, int col)
+    private IEnumerator CheckAllCells()
     {
         var width = gridCreator.puzzleSettings.width;
         var height = gridCreator.puzzleSettings.height;
-        GameManager.Instance.gameState = GameStates.Drop;
 
-        int value = matrix[row, col].number;
-        List<(int, int)> indexesToClear = new List<(int, int)>();
-
-        // Check horizontal
-        List<(int, int)> horizontalIndexes = new List<(int, int)>();
-        for (int k = col - 1; k >= 0 && matrix[row, k].number == value; k--)
+        for (int i = 0; i < height; i++)
         {
-            horizontalIndexes.Add((row, k));
-        }
-
-        for (int k = col + 1; k < width && matrix[row, k].number == value; k++)
-        {
-            horizontalIndexes.Add((row, k));
-        }
-
-        if (horizontalIndexes.Count >= 2)
-        {
-            horizontalIndexes.Add((row, col));
-            indexesToClear.AddRange(horizontalIndexes);
-        }
-
-        // Check vertical
-        List<(int, int)> verticalIndexes = new List<(int, int)>();
-        for (int k = row - 1; k >= 0 && matrix[k, col].number == value; k--)
-        {
-            verticalIndexes.Add((k, col));
-        }
-
-        for (int k = row + 1; k < height && matrix[k, col].number == value; k++)
-        {
-            verticalIndexes.Add((k, col));
-        }
-
-        if (verticalIndexes.Count >= 2)
-        {
-            verticalIndexes.Add((row, col));
-            indexesToClear.AddRange(verticalIndexes);
-        }
-
-        Sequence sequence = DOTween.Sequence();
-
-        //koşul sağlandıysa animasyonu oynat 
-        foreach (var index in indexesToClear)
-        {
-            GameManager.Instance.ColorPopped(matrix[index.Item1, index.Item2].number);
-            matrix[index.Item1, index.Item2].number = 0;
-            matrix[index.Item1, index.Item2].numberText.text = "";
-            sequence.Join(matrix[index.Item1, index.Item2].Animation());
-        }
-
-        yield return sequence.WaitForCompletion();
-
-        //eğer koşul sağlandıysa düşme işlemini başlat
-        if (indexesToClear.Count > 0)
-        {
-            yield return StartCoroutine(DropElementsAndFillCoroutine());
-        }
-        else
-        {
-            GameManager.Instance.gameState = GameStates.Idle;
+            for (int j = 0; j < width; j++)
+            {
+                yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine(i, j));
+            }
         }
     }
+   private IEnumerator UpdateMatrixAfterChangeCoroutine(int row, int col)
+{
+    var width = gridCreator.puzzleSettings.width;
+    var height = gridCreator.puzzleSettings.height;
+    GameManager.Instance.gameState = GameStates.Drop;
+
+    List<(int, int)> indexesToClear = new List<(int, int)>();
+
+    // Check all cells for matches
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            int value = matrix[i, j].number;
+
+            // Check horizontal
+            List<(int, int)> horizontalIndexes = new List<(int, int)>();
+            for (int k = j - 1; k >= 0 && matrix[i, k].number == value; k--)
+            {
+                horizontalIndexes.Add((i, k));
+            }
+
+            for (int k = j + 1; k < width && matrix[i, k].number == value; k++)
+            {
+                horizontalIndexes.Add((i, k));
+            }
+
+            if (horizontalIndexes.Count >= 2)
+            {
+                horizontalIndexes.Add((i, j));
+                indexesToClear.AddRange(horizontalIndexes);
+            }
+
+            // Check vertical
+            List<(int, int)> verticalIndexes = new List<(int, int)>();
+            for (int k = i - 1; k >= 0 && matrix[k, j].number == value; k--)
+            {
+                verticalIndexes.Add((k, j));
+            }
+
+            for (int k = i + 1; k < height && matrix[k, j].number == value; k++)
+            {
+                verticalIndexes.Add((k, j));
+            }
+
+            if (verticalIndexes.Count >= 2)
+            {
+                verticalIndexes.Add((i, j));
+                indexesToClear.AddRange(verticalIndexes);
+            }
+        }
+    }
+
+    Sequence sequence = DOTween.Sequence();
+
+    // Play animations for all matches at once
+    foreach (var index in indexesToClear)
+    {
+        GameManager.Instance.ColorPopped(matrix[index.Item1, index.Item2].number);
+        matrix[index.Item1, index.Item2].number = 0;
+        matrix[index.Item1, index.Item2].numberText.text = "";
+        sequence.Join(matrix[index.Item1, index.Item2].Animation());
+    }
+
+    yield return sequence.WaitForCompletion();
+
+    // If any matches were found, start the drop operation
+    if (indexesToClear.Count > 0)
+    {
+        yield return StartCoroutine(DropElementsAndFillCoroutine());
+    }
+    else
+    {
+        GameManager.Instance.gameState = GameStates.Idle;
+    }
+}
 
     private void OnEnable()
     {
