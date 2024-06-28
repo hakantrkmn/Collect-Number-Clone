@@ -14,8 +14,8 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     public Image background;
 
 
-    [HideInInspector] public int number;
-    [HideInInspector] public Vector2 cellIndex;
+     public int number;
+     public Vector2 cellIndex;
 
     private void Start()
     {

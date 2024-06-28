@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using DG.Tweening;
 using Sirenix.OdinInspector;
@@ -16,10 +17,7 @@ public class PuzzleManager : MonoBehaviour
     private Cell[,] matrix;
 
 
-    private void Start()
-    {
-        matrix = gridCreator.matrix;
-    }
+ 
 
 
     private IEnumerator DropElementsAndFillCoroutine()
@@ -72,7 +70,7 @@ public class PuzzleManager : MonoBehaviour
             {
                 ZeroNumbers[i].transform.position = new Vector3(ZeroNumbers[i].transform.position.x,
                     gridCreator.topPoint.position.y + (i * gridCreator.cellGap), ZeroNumbers[i].transform.position.z);
-                ZeroNumbers[i].number = Random.Range(1, 5);
+                ZeroNumbers[i].number = EventManager.GetPuzzleSettings().possibleNumbers[Random.Range(0, EventManager.GetPuzzleSettings().possibleNumbers.Count)];
                 ZeroNumbers[i].UpdateText();
             }
 
@@ -194,6 +192,8 @@ public class PuzzleManager : MonoBehaviour
 
     private void OnCellClicked(Cell obj)
     {
+        matrix = gridCreator.matrix;
+
         StartCoroutine(UpdateMatrixAfterChangeCoroutine((int)obj.cellIndex.y, (int)obj.cellIndex.x));
     }
 }

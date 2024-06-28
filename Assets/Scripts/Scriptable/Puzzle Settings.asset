@@ -21,8 +21,8 @@ MonoBehaviour:
     color: {r: 0.1808308, g: 0.08597365, b: 0.8679245, a: 1}
   - number: 4
     color: {r: 0.8748139, g: 0, b: 0.9150943, a: 1}
-  width: 4
-  height: 4
+  width: 6
+  height: 6
   spacing: 30
   possibleNumbers: 01000000020000000300000004000000
   cellPrefab: {fileID: 554999577893133624, guid: 221195cdcfd6549f98344719bd926ea6,
@@ -30,4 +30,7 @@ MonoBehaviour:
   matrixValues:
   - row: 1
     col: 2
-    value: 5
+    value: 4
+  - row: 1
+    col: 1
+    value: 2

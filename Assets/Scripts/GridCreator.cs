@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using Unity.VisualScripting;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 [ExecuteInEditMode]
 public class GridCreator : MonoBehaviour
@@ -19,7 +18,6 @@ public class GridCreator : MonoBehaviour
     [HideInInspector]public PuzzleSettings puzzleSettings;
     private void Start()
     {
-
         var height = puzzleSettings.height;
         var width = puzzleSettings.width;
         matrix = new Cell[height, width];
@@ -32,6 +30,43 @@ public class GridCreator : MonoBehaviour
                 cells[i * width + j].cellIndex = new Vector2(j, i);
             }
         }
+        ResizeGrid();
+    }
+
+    [Button]
+    public void ResizeGrid()
+    {
+        var height = puzzleSettings.height;
+        var width = puzzleSettings.width;
+        var spacing = puzzleSettings.spacing;
+        var rectTransform = GetComponent<RectTransform>();
+        var cellSize = Mathf.Min(
+            (rectTransform.rect.width - (width - 1) * spacing - 2 * spacing) / width,
+            (rectTransform.rect.height - (height - 1) * spacing - 2 * spacing) / height
+        );
+        var totalWidth = (cellSize + spacing) * width - spacing;
+        var totalHeight = (cellSize + spacing) * height - spacing;
+        var startX = -totalWidth / 2 + cellSize / 2;
+        var startY = totalHeight / 2 - cellSize / 2;
+        
+        topPoint.GetComponent<RectTransform>().anchoredPosition = new Vector3(0, 0, 0);
+        topPoint.position += new Vector3(0, cellSize/2, 0);
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                Vector3 gridPosition = new Vector3(startX + x * (cellSize + spacing),
+                    startY + y * -(cellSize + spacing), 0);
+
+                var grid =  cells[y * width + x];
+                grid.transform.localPosition = gridPosition;
+                grid.GetComponent<RectTransform>().sizeDelta = new Vector2(cellSize, cellSize);
+
+                
+            }
+        }
+        
+        cellGap = cells[0].transform.position.y- cells[width].transform.position.y;
     }
 
 
@@ -48,10 +83,15 @@ public class GridCreator : MonoBehaviour
     {
         puzzleSettings = set;
         GenerateGrid();
+#if UNITY_EDITOR
+
         if (GUI.changed)
         {
             EditorUtility.SetDirty(this);
         }
+
+#endif
+        
     }
 
     void CreateGrid()
@@ -79,8 +119,12 @@ public class GridCreator : MonoBehaviour
             {
                 Vector3 gridPosition = new Vector3(startX + x * (cellSize + spacing),
                     startY + y * -(cellSize + spacing), 0);
-
+                #if UNITY_EDITOR
                 var grid =  PrefabUtility.InstantiatePrefab(cellPrefab).GameObject();
+                #else
+                var grid = Instantiate(cellPrefab);
+                #endif
+                
                 grid.transform.SetParent(transform);
                 grid.transform.localPosition = gridPosition;
                 grid.GetComponent<RectTransform>().sizeDelta = new Vector2(cellSize, cellSize);
@@ -119,7 +163,6 @@ public class GridCreator : MonoBehaviour
         {
             for (int j = 0; j < width; j++)
             {
-                Debug.Log(i * width + j);
 
                 matrix[i, j] = cells[i * width + j];
                 cells[i * width + j].cellIndex = new Vector2(j, i);
@@ -139,6 +182,7 @@ public class GridCreator : MonoBehaviour
             {
                 matrix[row, col].number = value;
                 matrix[row, col].UpdateText();
+                matrix[row, col].background.color = puzzleSettings.numbers.Find(x => x.number == value).color;
             }
         }
 
