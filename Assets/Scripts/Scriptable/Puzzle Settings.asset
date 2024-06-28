@@ -21,13 +21,13 @@ MonoBehaviour:
     color: {r: 0.1808308, g: 0.08597365, b: 0.8679245, a: 1}
   - number: 4
     color: {r: 0.8748139, g: 0, b: 0.9150943, a: 1}
-  - number: 5
-    color: {r: 0.14431292, g: 0.6509434, b: 0.5924267, a: 1}
-  - number: 6
-    color: {r: 0.8584906, g: 0.73920083, b: 0.09313814, a: 1}
-  - number: 7
-    color: {r: 0, g: 0.6642885, b: 0.8113208, a: 1}
-  - number: 8
-    color: {r: 0.8339715, g: 0.8396226, b: 0.07524917, a: 1}
-  - number: 9
-    color: {r: 0.5839845, g: 0.754717, b: 0.12459949, a: 1}
+  width: 4
+  height: 4
+  spacing: 30
+  possibleNumbers: 01000000020000000300000004000000
+  cellPrefab: {fileID: 554999577893133624, guid: 221195cdcfd6549f98344719bd926ea6,
+    type: 3}
+  matrixValues:
+  - row: 1
+    col: 2
+    value: 5

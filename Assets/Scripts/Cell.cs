@@ -48,6 +48,6 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     public Tween Animation()
     {
         DOTween.Complete(this);
-        return background.transform.DOScale(1.3f, .2f).SetLoops(2, LoopType.Yoyo);
+        return background.transform.DOScale(1.3f, .2f).SetLoops(2, LoopType.Yoyo).SetId(this);
     }
 }

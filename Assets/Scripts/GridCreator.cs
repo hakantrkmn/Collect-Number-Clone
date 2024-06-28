@@ -1,33 +1,27 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.Serialization;
-
+[ExecuteInEditMode]
 public class GridCreator : MonoBehaviour
 {
     public Cell[,] matrix;
     
-    public List<FixedValue> matrixValues;
-    public List<int> possibleNumbers;
-    
-    public GameObject cellPrefab;
-    public int width;
-    public int height;
-    public float spacing;
-
     public Transform topPoint;
     
     public List<Cell> cells;
 
     [HideInInspector]public float cellGap;
 
+    [HideInInspector]public PuzzleSettings puzzleSettings;
     private void Start()
     {
+
+        var height = puzzleSettings.height;
+        var width = puzzleSettings.width;
         matrix = new Cell[height, width];
 
         for (int i = 0; i < height; i++)
@@ -40,8 +34,32 @@ public class GridCreator : MonoBehaviour
         }
     }
 
+
+    private void OnEnable()
+    {
+        EventManager.SetPuzzle += SetPuzzle;
+    }
+    private void OnDisable()
+    {
+        EventManager.SetPuzzle -= SetPuzzle;
+    }
+
+    private void SetPuzzle(PuzzleSettings set)
+    {
+        puzzleSettings = set;
+        GenerateGrid();
+        if (GUI.changed)
+        {
+            EditorUtility.SetDirty(this);
+        }
+    }
+
     void CreateGrid()
     {
+        var height = puzzleSettings.height;
+        var width = puzzleSettings.width;
+        var spacing = puzzleSettings.spacing;
+        var cellPrefab = puzzleSettings.cellPrefab;
         ClearGrid();
         var rectTransform = GetComponent<RectTransform>();
         var cellSize = Mathf.Min(
@@ -89,6 +107,10 @@ public class GridCreator : MonoBehaviour
     [Button]
     void GenerateGrid()
     {
+        var height = puzzleSettings.height;
+        var width = puzzleSettings.width;
+        var possibleNumbers = puzzleSettings.possibleNumbers;
+        var matrixValues = puzzleSettings.matrixValues;
         CreateGrid();
         
         matrix = new Cell[height, width];
@@ -141,6 +163,7 @@ public class GridCreator : MonoBehaviour
                     {
                         matrix[i, j].number = value;
                         matrix[i, j].UpdateText();
+                        matrix[i, j].background.color = puzzleSettings.numbers.Find(x => x.number == value).color;
                         validValueFound = true;
                     }
                     else
@@ -160,6 +183,8 @@ public class GridCreator : MonoBehaviour
 
     private bool IsValueValid(int row, int col, int value)
     {
+        int height = puzzleSettings.height;
+        int width = puzzleSettings.width;
         // Yatay kontrol
         int sameCount = 0;
         for (int i = 0; i < width; i++)

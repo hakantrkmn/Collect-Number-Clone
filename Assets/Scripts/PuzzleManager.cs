@@ -24,14 +24,16 @@ public class PuzzleManager : MonoBehaviour
 
     private IEnumerator DropElementsAndFillCoroutine()
     {
+        var width = gridCreator.puzzleSettings.width;
+        var height = gridCreator.puzzleSettings.height;
         var changedCells = new List<Cell>();
         Sequence mainSequence = DOTween.Sequence();
 
         //tüm satırları kontrol et
-        for (int col = 0; col < gridCreator.width; col++)
+        for (int col = 0; col < width; col++)
         {
             bool hasZero = false;
-            for (int row = 0; row < gridCreator.height; row++)
+            for (int row = 0; row < height; row++)
             {
                 if (matrix[row, col].number == 0)
                 {
@@ -46,7 +48,7 @@ public class PuzzleManager : MonoBehaviour
             ZeroNumbers.Clear();
 
             //sıfır olmayanları ve sıfırları ayır
-            for (int row = gridCreator.height - 1; row >= 0; row--)
+            for (int row = height - 1; row >= 0; row--)
             {
                 if (matrix[row, col].number != 0)
                 {
@@ -60,7 +62,7 @@ public class PuzzleManager : MonoBehaviour
             //gidecekleri pozisyonları listede sakla
             List<Vector3> gridPositions = new List<Vector3>();
 
-            for (int row = gridCreator.height - 1; row >= 0; row--)
+            for (int row = height - 1; row >= 0; row--)
             {
                 gridPositions.Add(matrix[row, col].transform.position);
             }
@@ -113,6 +115,8 @@ public class PuzzleManager : MonoBehaviour
 
     private IEnumerator UpdateMatrixAfterChangeCoroutine(int row, int col)
     {
+        var width = gridCreator.puzzleSettings.width;
+        var height = gridCreator.puzzleSettings.height;
         GameManager.Instance.gameState = GameStates.Drop;
 
         int value = matrix[row, col].number;
@@ -125,7 +129,7 @@ public class PuzzleManager : MonoBehaviour
             horizontalIndexes.Add((row, k));
         }
 
-        for (int k = col + 1; k < gridCreator.width && matrix[row, k].number == value; k++)
+        for (int k = col + 1; k < width && matrix[row, k].number == value; k++)
         {
             horizontalIndexes.Add((row, k));
         }
@@ -143,7 +147,7 @@ public class PuzzleManager : MonoBehaviour
             verticalIndexes.Add((k, col));
         }
 
-        for (int k = row + 1; k < gridCreator.height && matrix[k, col].number == value; k++)
+        for (int k = row + 1; k < height && matrix[k, col].number == value; k++)
         {
             verticalIndexes.Add((k, col));
         }
