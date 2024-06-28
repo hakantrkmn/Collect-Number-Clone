@@ -7,4 +7,11 @@ using UnityEngine;
 public static class EventManager 
 {
     public static Action<Cell> CellClicked;
+    
+    public static Func<PuzzleSettings> GetPuzzleSettings;
+
+
+    public static Action UpdateTargetUI;
+    public static Action LevelCompleted;
+
 }

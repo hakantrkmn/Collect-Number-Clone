@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8a9eee3613474472ae969dab1b2ad44, type: 3}
+  m_Name: Puzzle Settings
+  m_EditorClassIdentifier: 
+  numbers:
+  - number: 1
+    color: {r: 0.7169812, g: 0.15218942, b: 0.15218942, a: 1}
+  - number: 2
+    color: {r: 0.29928315, g: 0.8018868, b: 0.13995194, a: 1}
+  - number: 3
+    color: {r: 0.1808308, g: 0.08597365, b: 0.8679245, a: 1}
+  - number: 4
+    color: {r: 0.8748139, g: 0, b: 0.9150943, a: 1}
+  - number: 5
+    color: {r: 0.14431292, g: 0.6509434, b: 0.5924267, a: 1}
+  - number: 6
+    color: {r: 0.8584906, g: 0.73920083, b: 0.09313814, a: 1}
+  - number: 7
+    color: {r: 0, g: 0.6642885, b: 0.8113208, a: 1}
+  - number: 8
+    color: {r: 0.8339715, g: 0.8396226, b: 0.07524917, a: 1}
+  - number: 9
+    color: {r: 0.5839845, g: 0.754717, b: 0.12459949, a: 1}
