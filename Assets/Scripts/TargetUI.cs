@@ -19,6 +19,7 @@ public class TargetUI : MonoBehaviour
         {
             var target = Instantiate(prefab, transform).GetComponent<TargetColorUI>();
             targetColors.Add(target);
+            target.amount = targets[i].amount;
             target.info = data.numbers.First(x => x.number == targets[i].number);
             target.SetUI();
         }
