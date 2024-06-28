@@ -17,20 +17,15 @@ public class PuzzleManager : MonoBehaviour
     private Cell[,] matrix;
 
 
- 
-
-
     private IEnumerator DropElementsAndFillCoroutine()
     {
         var width = gridCreator.puzzleSettings.width;
         var height = gridCreator.puzzleSettings.height;
-        var changedCells = new List<Cell>();
         Sequence mainSequence = DOTween.Sequence();
 
         //tüm satırları kontrol et
         for (int col = 0; col < width; col++)
         {
-           
             nonZeroNumbers.Clear();
             ZeroNumbers.Clear();
 
@@ -46,6 +41,7 @@ public class PuzzleManager : MonoBehaviour
                     ZeroNumbers.Add(matrix[row, col]);
                 }
             }
+
             //gidecekleri pozisyonları listede sakla
             List<Vector3> gridPositions = new List<Vector3>();
 
@@ -59,13 +55,13 @@ public class PuzzleManager : MonoBehaviour
             {
                 ZeroNumbers[i].transform.position = new Vector3(ZeroNumbers[i].transform.position.x,
                     gridCreator.topPoint.position.y + (i * gridCreator.cellGap), ZeroNumbers[i].transform.position.z);
-                ZeroNumbers[i].number = EventManager.GetPuzzleSettings().possibleNumbers[Random.Range(0, EventManager.GetPuzzleSettings().possibleNumbers.Count)];
+                ZeroNumbers[i].number = EventManager.GetPuzzleSettings()
+                    .possibleNumbers[Random.Range(0, EventManager.GetPuzzleSettings().possibleNumbers.Count)];
                 ZeroNumbers[i].UpdateText();
             }
 
             //sıfır olanları sıfır olmayanların üstüne taşı bu sayede sıralı bir şekilde yerleşmiş olacaklar
             nonZeroNumbers.AddRange(ZeroNumbers);
-            changedCells.AddRange(nonZeroNumbers);
 
             Sequence columnSequence = DOTween.Sequence();
 
@@ -91,107 +87,102 @@ public class PuzzleManager : MonoBehaviour
 
         yield return mainSequence.WaitForCompletion();
 
-        //değişen celler için kontrol yap
-        foreach (var cell in changedCells)
+
+        yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine());
+    }
+
+    private IEnumerator UpdateMatrixAfterChangeCoroutine(bool isClick = false, int row = 0, int col = 0)
+    {
+        var width = gridCreator.puzzleSettings.width;
+        var height = gridCreator.puzzleSettings.height;
+        GameManager.Instance.gameState = GameStates.Drop;
+
+        List<(int, int)> indexesToClear = new List<(int, int)>();
+
+        if (isClick)
         {
-            yield return StartCoroutine(UpdateMatrixAfterChangeCoroutine());
+            // tıklanan cellin etrafını kontrol et
+            CheckForBlast(row, col, width, indexesToClear, height);
         }
-
-        changedCells.Clear();
-    }
-    
-   private IEnumerator UpdateMatrixAfterChangeCoroutine(bool isClick = false,int row = 0, int col = 0)
-{
-    var width = gridCreator.puzzleSettings.width;
-    var height = gridCreator.puzzleSettings.height;
-    GameManager.Instance.gameState = GameStates.Drop;
-
-    List<(int, int)> indexesToClear = new List<(int, int)>();
-
-    if (isClick)
-    {
-        CheckForBlast(row, col, width, indexesToClear, height);
-
-    }
-    else
-    {
-        for (int i = 0; i < height; i++)
+        else
         {
-            for (int j = 0; j < width; j++)
+            // bütün matrixi kontrol et
+            for (int i = 0; i < height; i++)
             {
-                CheckForBlast(i, j, width, indexesToClear, height);
+                for (int j = 0; j < width; j++)
+                {
+                    CheckForBlast(i, j, width, indexesToClear, height);
+                }
             }
         }
+
+
+        Sequence sequence = DOTween.Sequence();
+
+        // eşleşenlern animasyonunu oynat
+        foreach (var index in indexesToClear)
+        {
+            GameManager.Instance.ColorPopped(matrix[index.Item1, index.Item2].number);
+            matrix[index.Item1, index.Item2].number = 0;
+            matrix[index.Item1, index.Item2].numberText.text = "";
+            sequence.Join(matrix[index.Item1, index.Item2].Animation());
+        }
+
+        yield return sequence.WaitForCompletion();
+
+        // match varsa düşür ve doldur
+        if (indexesToClear.Count > 0)
+        {
+            yield return StartCoroutine(DropElementsAndFillCoroutine());
+        }
+        else
+        {
+            GameManager.Instance.gameState = GameStates.Idle;
+        }
     }
-    // Check all cells for matches
-    
 
-    Sequence sequence = DOTween.Sequence();
-
-    // Play animations for all matches at once
-    foreach (var index in indexesToClear)
+    private void CheckForBlast(int i, int j, int width, List<(int, int)> indexesToClear, int height)
     {
-        GameManager.Instance.ColorPopped(matrix[index.Item1, index.Item2].number);
-        matrix[index.Item1, index.Item2].number = 0;
-        matrix[index.Item1, index.Item2].numberText.text = "";
-        sequence.Join(matrix[index.Item1, index.Item2].Animation());
+        int value = matrix[i, j].number;
+
+        // Check horizontal
+        List<(int, int)> horizontalIndexes = new List<(int, int)>();
+        for (int k = j - 1; k >= 0 && matrix[i, k].number == value; k--)
+        {
+            horizontalIndexes.Add((i, k));
+        }
+
+        for (int k = j + 1; k < width && matrix[i, k].number == value; k++)
+        {
+            horizontalIndexes.Add((i, k));
+        }
+
+        if (horizontalIndexes.Count >= 2)
+        {
+            horizontalIndexes.Add((i, j));
+            indexesToClear.AddRange(horizontalIndexes);
+        }
+
+        // Check vertical
+        List<(int, int)> verticalIndexes = new List<(int, int)>();
+        for (int k = i - 1; k >= 0 && matrix[k, j].number == value; k--)
+        {
+            verticalIndexes.Add((k, j));
+        }
+
+        for (int k = i + 1; k < height && matrix[k, j].number == value; k++)
+        {
+            verticalIndexes.Add((k, j));
+        }
+
+        if (verticalIndexes.Count >= 2)
+        {
+            verticalIndexes.Add((i, j));
+            indexesToClear.AddRange(verticalIndexes);
+        }
     }
 
-    yield return sequence.WaitForCompletion();
-
-    // If any matches were found, start the drop operation
-    if (indexesToClear.Count > 0)
-    {
-        yield return StartCoroutine(DropElementsAndFillCoroutine());
-    }
-    else
-    {
-        GameManager.Instance.gameState = GameStates.Idle;
-    }
-}
-
-private void CheckForBlast(int i, int j, int width, List<(int, int)> indexesToClear, int height)
-{
-    int value = matrix[i, j].number;
-
-    // Check horizontal
-    List<(int, int)> horizontalIndexes = new List<(int, int)>();
-    for (int k = j - 1; k >= 0 && matrix[i, k].number == value; k--)
-    {
-        horizontalIndexes.Add((i, k));
-    }
-
-    for (int k = j + 1; k < width && matrix[i, k].number == value; k++)
-    {
-        horizontalIndexes.Add((i, k));
-    }
-
-    if (horizontalIndexes.Count >= 2)
-    {
-        horizontalIndexes.Add((i, j));
-        indexesToClear.AddRange(horizontalIndexes);
-    }
-
-    // Check vertical
-    List<(int, int)> verticalIndexes = new List<(int, int)>();
-    for (int k = i - 1; k >= 0 && matrix[k, j].number == value; k--)
-    {
-        verticalIndexes.Add((k, j));
-    }
-
-    for (int k = i + 1; k < height && matrix[k, j].number == value; k++)
-    {
-        verticalIndexes.Add((k, j));
-    }
-
-    if (verticalIndexes.Count >= 2)
-    {
-        verticalIndexes.Add((i, j));
-        indexesToClear.AddRange(verticalIndexes);
-    }
-}
-
-private void OnEnable()
+    private void OnEnable()
     {
         EventManager.CellClicked += OnCellClicked;
     }
@@ -205,6 +196,6 @@ private void OnEnable()
     {
         matrix = gridCreator.matrix;
 
-        StartCoroutine(UpdateMatrixAfterChangeCoroutine(true,(int)obj.cellIndex.y, (int)obj.cellIndex.x));
+        StartCoroutine(UpdateMatrixAfterChangeCoroutine(true, (int)obj.cellIndex.y, (int)obj.cellIndex.x));
     }
 }
