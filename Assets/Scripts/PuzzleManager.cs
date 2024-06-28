@@ -53,11 +53,8 @@ public class PuzzleManager : MonoBehaviour
             //sıfır olan cellleri ekranın üstüne taşı ve yeni değerlerini ata
             for (int i = 0; i < ZeroNumbers.Count; i++)
             {
-                ZeroNumbers[i].transform.position = new Vector3(ZeroNumbers[i].transform.position.x,
-                    gridCreator.topPoint.position.y + (i * gridCreator.cellGap), ZeroNumbers[i].transform.position.z);
-                ZeroNumbers[i].number = EventManager.GetPuzzleSettings()
-                    .possibleNumbers[Random.Range(0, EventManager.GetPuzzleSettings().possibleNumbers.Count)];
-                ZeroNumbers[i].UpdateText();
+                ZeroNumbers[i].MoveUp(gridCreator.topPoint.position.y + (i * gridCreator.cellGap));
+                
             }
 
             //sıfır olanları sıfır olmayanların üstüne taşı bu sayede sıralı bir şekilde yerleşmiş olacaklar
@@ -70,8 +67,7 @@ public class PuzzleManager : MonoBehaviour
             {
                 if (nonZeroNumbers[i].transform.position != gridPositions[i])
                 {
-                    columnSequence.Join(nonZeroNumbers[i].transform.DOMove(gridPositions[i],
-                        Vector3.Distance(gridPositions[i], nonZeroNumbers[i].transform.position) / 800));
+                    columnSequence.Join(nonZeroNumbers[i].DropAnimation(gridPositions[i]));
                 }
             }
 
@@ -125,7 +121,7 @@ public class PuzzleManager : MonoBehaviour
             GameManager.Instance.ColorPopped(matrix[index.Item1, index.Item2].number);
             matrix[index.Item1, index.Item2].number = 0;
             matrix[index.Item1, index.Item2].numberText.text = "";
-            sequence.Join(matrix[index.Item1, index.Item2].Animation());
+            sequence.Join(matrix[index.Item1, index.Item2].ClickAnimation());
         }
 
         yield return sequence.WaitForCompletion();

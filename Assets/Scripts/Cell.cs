@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class Cell : MonoBehaviour, IPointerClickHandler
 {
@@ -27,7 +28,7 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         if (GameManager.Instance.gameState != GameStates.Idle) return;
 
 
-        Animation();
+        ClickAnimation();
         number++;
         UpdateText();
         EventManager.CellClicked?.Invoke(this);
@@ -45,7 +46,18 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    public Tween Animation()
+    public void MoveUp(float yPoint)
+    {
+        transform.position = new Vector3(transform.position.x, yPoint, transform.position.z);
+        number = EventManager.GetPuzzleSettings().possibleNumbers[Random.Range(0, EventManager.GetPuzzleSettings().possibleNumbers.Count)];
+        UpdateText();
+    }
+    public Tween DropAnimation(Vector3 targetPos)
+    {
+        return transform.DOMove(targetPos,
+            Vector3.Distance(targetPos, transform.position) / 800);
+    }
+    public Tween ClickAnimation()
     {
         DOTween.Complete(this);
         return background.transform.DOScale(1.3f, .2f).SetLoops(2, LoopType.Yoyo).SetId(this);
